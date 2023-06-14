@@ -11,7 +11,8 @@ ser = serial.Serial(s_name)
 # To read from the dev
 
 while True:
-    print(f'write into {s_name} your text')
-    my_text = 'Your text'.encode()
-    ser.write(my_text)
-    time.sleep(1)
+    s_name = os.ttyname(slave)
+
+    ser = serial.Serial(s_name)
+    print(s_name)
+    time.sleep(0.2)

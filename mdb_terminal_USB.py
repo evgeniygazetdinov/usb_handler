@@ -5,14 +5,13 @@ import serial.tools.list_ports as ports
 
 def find_availiable_ports():
     com_ports = list(ports.comports())
-
     return [i.device for i in com_ports]
 
 Count = 0
 Response = 0
 Vend = False
 DoOnce = True
-Port = "/dev/ttys009"
+Port = "/dev/cu.usbserial-14310"
 Reset = bytearray([0x10])  # Reset
 Setap = bytearray([0x11, 0x00, 0x03, 0x00, 0x00, 0x00])  # Setap
 Setap2 = bytearray([0x11, 0x01, 0x03, 0xE8, 0x00, 0x00])  # Setap2 Max/Min prices
@@ -32,7 +31,7 @@ Poll = bytearray([0x12])
 ACK = bytearray([0x00])
 NAK = bytearray([0xff])
 print(find_availiable_ports())
-port = serial.Serial(Port, 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE)  # "/dev/ttyUSB0"  "COM3"
+reader_from_serial = serial.Serial(Port, 9600, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE)  # "/dev/ttyUSB0"  "COM3"
 Initialization = True
 
  # returns 'COMx'
@@ -88,7 +87,7 @@ def data_received_handler(indata):
             processing_byte(SelectionDenied, 250)
 
 def data_received():
-    indata = port.read(port.inWaiting())
+    indata = reader_from_serial.read(reader_from_serial.inWaiting())
     data_received_handler(indata.decode())
 
 def terminal_card():
@@ -118,12 +117,12 @@ def processing_byte(commands, sleep):
     summ = bytearray([checksum])
 
     time.sleep(sleep / 1000)
-    port.parity = serial.PARITY_MARK
+    reader_from_serial.parity = serial.PARITY_MARK
 
-    port.write(commands)
-    port.parity = serial.PARITY_SPACE
+    reader_from_serial.write(commands)
+    reader_from_serial.parity = serial.PARITY_SPACE
 
-    port.write(summ)
+    reader_from_serial.write(summ)
 
 def cal_checksum(packet_data, packet_length):
     check_sum_byte = 0x00
@@ -131,20 +130,22 @@ def cal_checksum(packet_data, packet_length):
         check_sum_byte += packet_data[i]
     return check_sum_byte & 0xFF
 
-
-
 def main():
     """ точка входа"""
-    # port.open() s
-    port.rts = True
-    port.timeout = 0.005
+    reader_from_serial.rts = True
+    reader_from_serial.timeout = 0.005
 
-    while port.inWaiting() > 0:
-        data_received()
-    port.close()
+    while True:      
+        if not reader_from_serial.is_open:
+            reader_from_serial.open()  
+        else:
+            data_received()
+
+        reader_from_serial.close()
     
 if __name__ == '__main__':
     main()
+
 
 
 
